@@ -46,7 +46,7 @@ class Http2TransportStream extends GrpcTransportStream {
 
   @override
   Future<void> terminate() async {
-    await _outgoingMessages.close();
+    await _outgoingMessages.close().catchError((_){});
     _transportStream.terminate();
   }
 }

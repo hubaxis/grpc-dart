@@ -17,7 +17,6 @@ import 'dart:async';
 
 import '../shared/message.dart';
 import '../shared/status.dart';
-
 import 'common.dart';
 import 'connection.dart';
 import 'method.dart';
@@ -41,8 +40,7 @@ const _reservedHeaders = [
 /// by previous metadata providers) and the [uri] that is being called, and is
 /// expected to modify the map before returning or before completing the
 /// returned [Future].
-typedef FutureOr<void> MetadataProvider(
-    Map<String, String> metadata, String uri);
+typedef FutureOr<void> MetadataProvider(Map<String, String> metadata, String uri);
 
 /// Runtime options for an RPC.
 class CallOptions {
@@ -58,10 +56,9 @@ class CallOptions {
   /// configure per-RPC metadata [providers]. The metadata [providers] are
   /// invoked in order for every RPC, and can modify the outgoing metadata
   /// (including metadata provided by previous providers).
-  factory CallOptions(
-      {Map<String, String> metadata,
-      Duration timeout,
-      List<MetadataProvider> providers}) {
+  factory CallOptions({Map<String, String> metadata,
+    Duration timeout,
+    List<MetadataProvider> providers}) {
     return CallOptions._(Map.unmodifiable(metadata ?? {}), timeout,
         List.unmodifiable(providers ?? []));
   }
@@ -71,7 +68,8 @@ class CallOptions {
 
   CallOptions mergedWith(CallOptions other) {
     if (other == null) return this;
-    final mergedMetadata = Map.from(metadata)..addAll(other.metadata);
+    final mergedMetadata = Map.from(metadata)
+      ..addAll(other.metadata);
     final mergedTimeout = other.timeout ?? timeout;
     final mergedProviders = List.from(metadataProviders)
       ..addAll(other.metadataProviders);
@@ -146,8 +144,9 @@ class ClientCall<Q, R> implements Response {
     } else {
       final metadata = Map<String, String>.from(options.metadata);
       Future.forEach(
-              options.metadataProviders,
-              (provider) => provider(metadata,
+          options.metadataProviders,
+              (provider) =>
+              provider(metadata,
                   '${connection.scheme}://${connection.authority}${audiencePath(_method)}'))
           .then((_) => _sendRequest(connection, _sanitizeMetadata(metadata)))
           .catchError(_onMetadataProviderError);
@@ -170,9 +169,9 @@ class ClientCall<Q, R> implements Response {
         .map(_method.requestSerializer)
         .handleError(_onRequestError)
         .listen(_stream.outgoingMessages.add,
-            onError: _stream.outgoingMessages.addError,
-            onDone: _stream.outgoingMessages.close,
-            cancelOnError: true);
+        onError: _stream.outgoingMessages.addError,
+        onDone: _stream.outgoingMessages.close,
+        cancelOnError: true);
     // The response stream might have been listened to before _stream was ready,
     // so try setting up the subscription here as well.
     _onResponseListen();
@@ -327,11 +326,11 @@ class ClientCall<Q, R> implements Response {
   Future<void> _terminate() async {
     isCancelled = true;
     _timeoutTimer?.cancel();
-    // Don't await _responses.close() here. It'll only complete once the done
-    // event has been delivered, and it's the caller of this function that is
-    // reading from responses as well, so we might end up deadlocked.
-    _responses.close();
-    _stream?.terminate();
+    if (_stream != null) {
+      await _stream.terminate();
+    }
+    await _responses.close();
+
     final futures = <Future>[];
     if (_requestSubscription != null) {
       futures.add(_requestSubscription.cancel());
