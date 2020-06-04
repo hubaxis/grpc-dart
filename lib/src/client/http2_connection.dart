@@ -153,6 +153,9 @@ class Http2ClientConnection implements connection.ClientConnection {
     }
     switch (_state) {
       case ConnectionState.ready:
+        final pendingCalls = _pendingCalls.toList();
+        _pendingCalls.clear();
+        pendingCalls.forEach(_startCall);
         _startCall(call);
         break;
       case ConnectionState.shutdown:
